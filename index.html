@@ -41,10 +41,12 @@
     }
 
     async function load() {
+      const bust = `?t=${Date.now()}`;
       try {
-        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+        const res = await fetch(`https://api.github.com/gists/${gistId}${bust}`, {
           headers: {
-            Authorization: `token ${token}`
+            Authorization: `token ${token}`,
+            "Cache-Control": "no-cache"
           }
         });
         const data = await res.json();
