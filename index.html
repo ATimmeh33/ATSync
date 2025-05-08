@@ -2,38 +2,51 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>ATSync – Shared Notepad</title>
+  <title>ATSync – Gist Notepad</title>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 1rem;
-    }
-    textarea {
-      width: 100%;
-      height: 80vh;
-      font-size: 1rem;
-      font-family: monospace;
-    }
-    button {
-      margin-top: 1rem;
-      padding: 0.5rem 1rem;
-      font-size: 1rem;
-    }
+    body { font-family: sans-serif; padding: 1rem; }
+    textarea { width: 100%; height: 70vh; font-family: monospace; font-size: 1rem; }
+    input[type="password"] { width: 300px; }
+    #tokenPrompt { margin-bottom: 1rem; }
+    #controls { display: none; }
   </style>
 </head>
 <body>
-  <h1>ATSync – Gist-Powered Notepad</h1>
-  <textarea id="pad" placeholder="Loading..."></textarea><br />
-  <button onclick="save()">💾 Save to Gist</button>
+  <h1>ATSync – Gist Notepad</h1>
+
+  <div id="tokenPrompt">
+    <label for="token">Enter GitHub PAT (Gist-only): </label><br />
+    <input type="password" id="token" placeholder="ghp_..." />
+    <button onclick="start()">▶️ Start</button>
+  </div>
+
+  <div id="controls">
+    <textarea id="pad" placeholder="Loading..."></textarea><br />
+    <button onclick="save()">💾 Save</button>
+  </div>
 
   <script>
     const gistId = "5b290d237691ff80b8cd194d57f4d401";
     const fileName = "content_1.txt";
-    const token = "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"; // Scoped-token, not sensitive.
+
+    let token = "";
+
+    async function start() {
+      token = document.getElementById("token").value.trim();
+      if (!token) return alert("Token is required.");
+
+      document.getElementById("tokenPrompt").style.display = "none";
+      document.getElementById("controls").style.display = "block";
+      await load();
+    }
 
     async function load() {
       try {
-        const res = await fetch(`https://api.github.com/gists/${gistId}`);
+        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+          headers: {
+            Authorization: `token ${token}`
+          }
+        });
         const data = await res.json();
         document.getElementById("pad").value = data.files[fileName].content;
       } catch (err) {
@@ -47,7 +60,7 @@
         const res = await fetch(`https://api.github.com/gists/${gistId}`, {
           method: "PATCH",
           headers: {
-            "Authorization": `token ${token}`,
+            Authorization: `token ${token}`,
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
@@ -56,18 +69,17 @@
             }
           })
         });
+
         if (res.ok) {
-          alert("Saved!");
+          alert("✅ Saved!");
         } else {
-          const errData = await res.json();
-          alert("Failed to save: " + JSON.stringify(errData));
+          const err = await res.json();
+          alert("Failed to save: " + JSON.stringify(err));
         }
       } catch (err) {
-        alert("Error saving: " + err.message);
+        alert("Save error: " + err.message);
       }
     }
-
-    load();
   </script>
 </body>
 </html>
