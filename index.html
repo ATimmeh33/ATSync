@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ATSync – Shared Notepad</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 1rem;
+    }
+    textarea {
+      width: 100%;
+      height: 80vh;
+      font-size: 1rem;
+      font-family: monospace;
+    }
+    button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>ATSync – Gist-Powered Notepad</h1>
+  <textarea id="pad" placeholder="Loading..."></textarea><br />
+  <button onclick="save()">💾 Save to Gist</button>
+
+  <script>
+    const gistId = "YOUR_GIST_ID_HERE"; // e.g., abc1234567890abcdef
+    const fileName = "pad.txt";         // Should match your Gist file
+    const token = "YOUR_GITHUB_TOKEN_HERE"; // ⚠️ Replace securely
+
+    async function load() {
+      try {
+        const res = await fetch(`https://api.github.com/gists/${gistId}`);
+        const data = await res.json();
+        document.getElementById("pad").value = data.files[fileName].content;
+      } catch (err) {
+        alert("Failed to load Gist: " + err.message);
+      }
+    }
+
+    async function save() {
+      const content = document.getElementById("pad").value;
+      try {
+        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+          method: "PATCH",
+          headers: {
+            "Authorization": `token ${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            files: {
+              [fileName]: { content }
+            }
+          })
+        });
+        if (res.ok) {
+          alert("Saved!");
+        } else {
+          const errData = await res.json();
+          alert("Failed to save: " + JSON.stringify(errData));
+        }
+      } catch (err) {
+        alert("Error saving: " + err.message);
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>
